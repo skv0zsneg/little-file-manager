@@ -3,6 +3,7 @@
 import os
 import enum
 import json
+import zipfile
 
 from sys import platform
 import xml.etree.ElementTree as xml
@@ -34,6 +35,9 @@ class ReadFile:
         if name not in os.listdir('.'):
             if self.tp == Types.XML.tp:
                 create_test_xml(self.full_path)
+            elif self.tp == Types.ZIP.tp:
+                with zipfile.ZipFile(self.full_path, 'w') as _:
+                    pass
             else:
                 with open(self.full_path, 'w') as _:
                     pass
@@ -55,6 +59,9 @@ class ReadFile:
                     json.dump(self.object_to_write, fw, indent=4)
             elif self.tp == Types.XML.tp:
                 write_in_xml(self.full_path, self.object_to_write)
+            elif self.tp == Types.ZIP.tp:
+                with zipfile.ZipFile(self.full_path, 'w') as zw:
+                    zw.write(self.object_to_write)
             return True
         except OSError:
             return False
@@ -65,8 +72,13 @@ class ReadFile:
     def print_file(self, name):
         self.full_path = os.path.join(self.path, name)
         try:
-            with open(self.full_path, 'r') as fr:
-                lines = fr.readlines()
+            if self.tp == Types.ZIP.tp:
+                z = zipfile.ZipFile(self.full_path)
+                
+
+            else:
+                with open(self.full_path, 'r') as fr:
+                    lines = fr.readlines()
             return lines
         except:
             return None
@@ -76,6 +88,8 @@ class ReadFile:
         self.full_path = os.path.join(self.path, name)
         try:
             os.remove(self.full_path)
+            if 'test_for_zip.xml' in os.listdir('.'):
+                os.remove('test_for_zip.xml')
             return True
         except OSError:
             return False
@@ -132,6 +146,26 @@ def write_in_xml(file_name, text):
         tree.write(fwd)
 
 
+def print_file_zip_info(name):
+    try:
+        z = zipfile.ZipFile(name)
+        z.printdir()
+        return True
+    except FileNotFoundError:
+        return False
+
+
+def extract_zip(name):
+    try:
+        z = zipfile.ZipFile(name)
+        z.extractall()
+        return os.path.join(os.path.abspath('.'), name)
+    except:
+        return None
+
+
+
+
 # -- launch --
 if __name__ == "__main__":
     while True:
@@ -181,7 +215,7 @@ if __name__ == "__main__":
                     if case == '4':
                         name = input("Введите имя файла: ")
                         res = cur.delete_file(name)
-                        print(f"\nФайл успешно удален ({cur.full_path})" if res else f"\nНеудалось удалить файл, похоже его не существует ({cur.full_path})")
+                        print(f"\nФайл успешно удален ({cur.full_path})" if res else f"\nНе удалось удалить файл, похоже его не существует ({cur.full_path})")
 
                 except AssertionError as e:
                     print('\n' + str(e))
@@ -233,7 +267,7 @@ if __name__ == "__main__":
                         print("Созданый оъект: ")
                         print(d)
                         res = cur.write_in_file(name, d)
-                        print(f"\nЗапись успешна ({cur.full_path})" if res else f"\nЗапись не удалось, похоже файла не существует ({cur.full_path})")
+                        print(f"\nЗапись успешна ({cur.full_path})" if res else f"\nЗапись не удалась, похоже файла не существует ({cur.full_path})")
                                 
 
                     if case == '3':
@@ -249,7 +283,7 @@ if __name__ == "__main__":
                     if case == '4':
                         name = input("Введите имя файла: ")
                         res = cur.delete_file(name)
-                        print(f"\nФайл успешно удален ({cur.full_path})" if res else f"\nНеудалось удалить файл, похоже его не существует ({cur.full_path})")
+                        print(f"\nФайл успешно удален ({cur.full_path})" if res else f"\nНе удалось удалить файл, похоже его не существует ({cur.full_path})")
 
 
                 except AssertionError as e:
@@ -283,7 +317,7 @@ if __name__ == "__main__":
                         name = input("Введите имя файла: ")
                         data = input("Введите данные для записи: ")
                         res = cur.write_in_file(name, data)
-                        print(f"\nЗапись успешна ({cur.full_path})" if res else f"\nЗапись не удалось, похоже файла не существует ({cur.full_path})")
+                        print(f"\nЗапись успешна ({cur.full_path})" if res else f"\nЗапись не удалась, похоже файла не существует ({cur.full_path})")
                                 
 
                     if case == '3':
@@ -299,7 +333,7 @@ if __name__ == "__main__":
                     if case == '4':
                         name = input("Введите имя файла: ")
                         res = cur.delete_file(name)
-                        print(f"\nФайл успешно удален ({cur.full_path})" if res else f"\nНеудалось удалить файл, похоже его не существует ({cur.full_path})")
+                        print(f"\nФайл успешно удален ({cur.full_path})" if res else f"\nНе удалось удалить файл, похоже его не существует ({cur.full_path})")
 
 
                 except AssertionError as e:
@@ -313,7 +347,57 @@ if __name__ == "__main__":
 
         # ZIP
         if case == '5':
-            ...
+            while True:
+                reset_terminal()
+                print("> РАБОТА С ZIP")
+                print("Выберите, что делать дальше:")
+                print("1. Создать архив в формате zip.\n2. Добавить файл в архив.\n3. Разархивировать файл и вывести данные о нем.\n4. Удалить файл и архив.\n5. Выйти")
+                case = input("\nВведите номер пункта: ")
+
+                cur = ReadFile(file_type=Types.ZIP.tp)
+
+                try:
+                    if case == '1':
+                        name = input("Введите имя архива: ")
+                        res = cur.create_file(name)
+                        print(f"\nСоздание успешно ({cur.full_path})" if res else f"\nСоздание не удалось, похоже архив уже существует ({cur.full_path})")
+
+
+                    if case == '2':
+                        name = input("Введите имя архива: ")
+                        test_file_name = "test_for_zip.xml"
+                        create_test_xml(test_file_name)
+                        print("Cоздан тестовый файл test_for_zip.xml")
+                        res = cur.write_in_file(name, test_file_name)
+                        os.remove(test_file_name)
+                        print(f"\nЗапись успешна ({cur.full_path})" if res else f"\nЗапись не удалась, похоже архива не существует ({cur.full_path})")
+                                
+
+                    if case == '3':
+                        name = input("Введите имя архива: ")
+                        lines = cur.print_file(name)
+                        print("Данные о файле: ")
+                        if print_file_zip_info(name):
+                            path_to_file = extract_zip(name)
+                            print(f"\nФайл успешно разархивирован ({path_to_file}).")
+                        else:
+                            print("\nОшибка. Похоже файла не существует.")
+
+
+                    if case == '4':
+                        name = input("Введите имя архива: ")
+                        res = cur.delete_file(name)
+                        print(f"\nАрхив и файл успешно удалены ({cur.full_path})" if res else f"\nНе удалось удалить архив, похоже его не существует ({cur.full_path})")
+
+
+                except AssertionError as e:
+                    print('\n' + str(e))
+
+                if case == '5':
+                    break
+                
+                input("\nНажмите любую клавишу, чтобы продолжить...")
+
         
         #  __________
         # |          |
