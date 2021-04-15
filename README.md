@@ -1,11 +1,11 @@
-# home-work-1
+# little-file-manager
 <img width="654" alt="raycast-untitled" src="https://user-images.githubusercontent.com/45899305/114853819-db2e0100-9dec-11eb-94bb-2d91710fc39e.png">
 
 *Python 3.x*
 
 #### Запуск одной строкой.
-```shell
-    python home_work_1.py
+```
+    python filemanager.py
 ```
 *Доплнительно устанавливается модуль из requirements.txt (pypiwin32==223)*
 ___
