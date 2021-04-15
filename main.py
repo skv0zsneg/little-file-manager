@@ -1,11 +1,17 @@
 #!/usr/bin/env/ python
 # -*- coding: utf-8 -*-
 import os
+import pip
 import enum
 import json
+import string
+import ctypes
 import zipfile
+import win32api
 
 from sys import platform
+
+import win32com.client as com
 import xml.etree.ElementTree as xml
 import xml.etree.cElementTree as ET
 
@@ -22,7 +28,7 @@ class Types(enum.Enum):
 
 
 class ReadFile:
-    # TODO: Make class accessable for all types (xml, json, zip) 
+    # TODO: Make class accessable for all types (xml, json, zip)
     def __init__(self, file_type=None):
         self.path = os.path.abspath('.')
         self.tp = file_type
@@ -45,7 +51,6 @@ class ReadFile:
         else:
             return False
 
-
     def write_in_file(self, name, object_to_write):
         self.object_to_write = object_to_write
         self.full_path = os.path.join(self.path, name)
@@ -67,14 +72,12 @@ class ReadFile:
             return False
         except AssertionError:
             return False
-    
 
     def print_file(self, name):
         self.full_path = os.path.join(self.path, name)
         try:
             if self.tp == Types.ZIP.tp:
                 z = zipfile.ZipFile(self.full_path)
-                
 
             else:
                 with open(self.full_path, 'r') as fr:
@@ -82,7 +85,6 @@ class ReadFile:
             return lines
         except:
             return None
-    
 
     def delete_file(self, name):
         self.full_path = os.path.join(self.path, name)
@@ -96,6 +98,72 @@ class ReadFile:
 
 
 # -- functions --
+def create_test_xml(file_name):
+    root = xml.Element("zAppointments")
+    appt = xml.Element("appointment")
+    root.append(appt)
+
+    t_o = xml.SubElement(appt, "Tested_Object")
+    t_o.text = "There is some text to Tested_Object..."
+
+    l_o_0 = xml.SubElement(appt, "Little_Object_0")
+    l_o_0.text = "There is some text to Little_Object_0..."
+
+    l_o_1 = xml.SubElement(appt, "Little_Object_1")
+    l_o_1.text = "There is some text to Little_Object_1..."
+
+    y_t = xml.SubElement(appt, "YORE_TEXT_IS_HERE")
+    y_t.text = ""
+
+    l_o_2 = xml.SubElement(appt, "Little_Object_2")
+
+    l_o_3 = xml.SubElement(appt, "Little_Object_3")
+    l_o_3.text = "There is some text to Little_Object_3..."
+
+    l_o_4 = xml.SubElement(appt, "Little_Object_4")
+
+    tree = xml.ElementTree(root)
+    with open(file_name, "wb") as fwd:
+        tree.write(fwd)
+
+
+def get_disk_info():
+    def disk_size(drive):
+        try:
+            fso = com.Dispatch("Scripting.FileSystemObject")
+            drv = fso.GetDrive(drive)
+            return drv.TotalSize/2**30
+        except:
+            return 0
+        
+    drives = []
+    bitmask = ctypes.windll.kernel32.GetLogicalDrives()
+    for letter in string.ascii_uppercase:
+        if bitmask & 1:
+            drives.append(letter)
+        bitmask >>= 1
+    
+    for disk in drives:
+        disk_name = disk + r':\\'
+        res = win32api.GetVolumeInformation(disk_name)
+        print('\nИмя диска: ' + res[0])
+        print('Метка тома: ' + disk)
+        print('Размер диска: ' + str(disk_size(disk + ':')))
+        print('Тип файловой системы: ' + res[-1], end='\n\n')
+
+
+def write_in_xml(file_name, text):
+    tree = ET.ElementTree(file=file_name)
+    root = tree.getroot()
+
+    for y_t in root.iter("YORE_TEXT_IS_HERE"):
+        y_t.text = text
+
+    tree = ET.ElementTree(root)
+    with open(file_name, "wb") as fwd:
+        tree.write(fwd)
+
+
 def reset_terminal():
     if platform == "linux" or platform == "linux2":
         os.system('clear')
@@ -103,47 +171,6 @@ def reset_terminal():
         os.system('reset')
     elif platform == "win32":
         os.system('cls')
-
-
-def create_test_xml(file_name):
-    root = xml.Element("zAppointments")
-    appt = xml.Element("appointment")
-    root.append(appt)
-    
-    t_o = xml.SubElement(appt, "Tested_Object")
-    t_o.text = "There is some text to Tested_Object..."
-    
-    l_o_0 = xml.SubElement(appt, "Little_Object_0")
-    l_o_0.text = "There is some text to Little_Object_0..."
-    
-    l_o_1 = xml.SubElement(appt, "Little_Object_1")
-    l_o_1.text = "There is some text to Little_Object_1..."
-    
-    y_t = xml.SubElement(appt, "YORE_TEXT_IS_HERE")
-    y_t.text = ""
-    
-    l_o_2 = xml.SubElement(appt, "Little_Object_2")
-    
-    l_o_3 = xml.SubElement(appt, "Little_Object_3")
-    l_o_3.text = "There is some text to Little_Object_3..."
-    
-    l_o_4 = xml.SubElement(appt, "Little_Object_4")
-        
-    tree = xml.ElementTree(root)
-    with open(file_name, "wb") as fwd:
-        tree.write(fwd)
-
-
-def write_in_xml(file_name, text):
-    tree = ET.ElementTree(file=file_name)
-    root = tree.getroot()
-    
-    for y_t in root.iter("YORE_TEXT_IS_HERE"):
-        y_t.text = text
-    
-    tree = ET.ElementTree(root)
-    with open(file_name, "wb") as fwd:
-        tree.write(fwd)
 
 
 def print_file_zip_info(name):
@@ -163,11 +190,15 @@ def extract_zip(name):
     except:
         return None
 
-
+def install_package(package_name):
+    pip.main(['install', package_name])
 
 
 # -- launch --
 if __name__ == "__main__":
+    reset_terminal()
+    print("Установка необходимых компонентов...", end='\n\n')
+    install_package('pypiwin32')
     while True:
         reset_terminal()
         print("Выберите, что делать дальше:")
@@ -177,8 +208,9 @@ if __name__ == "__main__":
 
         # Диски
         if case == '1':
-            print("Инфа\nПо дискам\nИ еще\nЧето наверн")
-        
+            get_disk_info()
+
+            input("\nНажмите любую клавишу, чтобы продолжить...")
 
         # Файлы
         if case == '2':
@@ -186,7 +218,8 @@ if __name__ == "__main__":
                 reset_terminal()
                 print("> РАБОТА С ФАЙЛАМИ")
                 print("Выберите, что делать дальше:")
-                print("1. Создать файл.\n2. Записать строку в файл.\n3. Прочитать файл в консоль.\n4. Удалить файл.\n5. Выйти")
+                print(
+                    "1. Создать файл.\n2. Записать строку в файл.\n3. Прочитать файл в консоль.\n4. Удалить файл.\n5. Выйти")
                 case = input("\nВведите номер пункта: ")
 
                 cur = ReadFile()
@@ -195,27 +228,31 @@ if __name__ == "__main__":
                     if case == '1':
                         name = input("Введите имя файла: ")
                         res = cur.create_file(name)
-                        print(f"\nСоздание успешно ({cur.full_path})" if res else f"\nСоздание не удалось, похоже файл уже существует ({cur.full_path})")
-                    
+                        print(
+                            f"\nСоздание успешно ({cur.full_path})" if res else f"\nСоздание не удалось, похоже файл уже существует ({cur.full_path})")
+
                     if case == '2':
                         name = input("Введите имя файла: ")
                         line = input("Введите строку для записи: ")
                         res = cur.write_in_file(name, line)
-                        print(f"\nЗапись успешна ({cur.full_path})" if res else f"\nЗапись не удалось, похоже файла не существует ({cur.full_path})")
-                    
+                        print(
+                            f"\nЗапись успешна ({cur.full_path})" if res else f"\nЗапись не удалось, похоже файла не существует ({cur.full_path})")
+
                     if case == '3':
                         name = input("Введите имя файла: ")
                         lines = cur.print_file(name)
                         if lines is not None:
-                            print("\nСоздержимое файла: ", end='') 
+                            print("\nСоздержимое файла: ", end='')
                             print(*lines)
                         else:
-                            print(f"\nОшибка. Похоже файла не существует ({cur.full_path}).")
+                            print(
+                                f"\nОшибка. Похоже файла не существует ({cur.full_path}).")
 
                     if case == '4':
                         name = input("Введите имя файла: ")
                         res = cur.delete_file(name)
-                        print(f"\nФайл успешно удален ({cur.full_path})" if res else f"\nНе удалось удалить файл, похоже его не существует ({cur.full_path})")
+                        print(
+                            f"\nФайл успешно удален ({cur.full_path})" if res else f"\nНе удалось удалить файл, похоже его не существует ({cur.full_path})")
 
                 except AssertionError as e:
                     print('\n' + str(e))
@@ -224,7 +261,6 @@ if __name__ == "__main__":
                     break
 
                 input("\nНажмите любую клавишу, чтобы продолжить...")
-               
 
         # JSON
         if case == '3':
@@ -241,59 +277,58 @@ if __name__ == "__main__":
                     if case == '1':
                         name = input("Введите имя файла: ")
                         res = cur.create_file(name)
-                        print(f"\nСоздание успешно ({cur.full_path})" if res else f"\nСоздание не удалось, похоже файл уже существует ({cur.full_path})")
-
+                        print(
+                            f"\nСоздание успешно ({cur.full_path})" if res else f"\nСоздание не удалось, похоже файл уже существует ({cur.full_path})")
 
                     if case == '2':
                         name = input("Введите имя файла: ")
                         d = {
                             'Tested_Object':
                                 {
-                                    'Little_Object_0': 
+                                    'Little_Object_0':
                                     {
-                                        'Go_Deeper_0': [0, 1, 2], 
+                                        'Go_Deeper_0': [0, 1, 2],
                                         'Go_Deeper_1': '1',
                                         'Go_Deeper_2': 0.23123
-                                        
+
                                     },
-                                    'Little_Object_1': 
+                                    'Little_Object_1':
                                     {
-                                        'Go_Deeper_0': None, 
+                                        'Go_Deeper_0': None,
                                         'Go_Deeper_1': True,
                                         'Go_Deeper_2': False
                                     }
                                 }
-                            }
+                        }
                         print("Созданый оъект: ")
                         print(d)
                         res = cur.write_in_file(name, d)
-                        print(f"\nЗапись успешна ({cur.full_path})" if res else f"\nЗапись не удалась, похоже файла не существует ({cur.full_path})")
-                                
+                        print(
+                            f"\nЗапись успешна ({cur.full_path})" if res else f"\nЗапись не удалась, похоже файла не существует ({cur.full_path})")
 
                     if case == '3':
                         name = input("Введите имя файла: ")
                         lines = cur.print_file(name)
                         if lines is not None:
-                            print("\nСоздержимое файла: ", end='') 
+                            print("\nСоздержимое файла: ", end='')
                             print(*lines)
                         else:
-                            print(f"\nОшибка. Похоже файла не существует ({cur.full_path}).")
-
+                            print(
+                                f"\nОшибка. Похоже файла не существует ({cur.full_path}).")
 
                     if case == '4':
                         name = input("Введите имя файла: ")
                         res = cur.delete_file(name)
-                        print(f"\nФайл успешно удален ({cur.full_path})" if res else f"\nНе удалось удалить файл, похоже его не существует ({cur.full_path})")
-
+                        print(
+                            f"\nФайл успешно удален ({cur.full_path})" if res else f"\nНе удалось удалить файл, похоже его не существует ({cur.full_path})")
 
                 except AssertionError as e:
                     print('\n' + str(e))
 
                 if case == '5':
                     break
-                
-                input("\nНажмите любую клавишу, чтобы продолжить...")
 
+                input("\nНажмите любую клавишу, чтобы продолжить...")
 
         # XML
         if case == '4':
@@ -310,40 +345,39 @@ if __name__ == "__main__":
                     if case == '1':
                         name = input("Введите имя файла: ")
                         res = cur.create_file(name)
-                        print(f"\nСоздание успешно ({cur.full_path})" if res else f"\nСоздание не удалось, похоже файл уже существует ({cur.full_path})")
-
+                        print(
+                            f"\nСоздание успешно ({cur.full_path})" if res else f"\nСоздание не удалось, похоже файл уже существует ({cur.full_path})")
 
                     if case == '2':
                         name = input("Введите имя файла: ")
                         data = input("Введите данные для записи: ")
                         res = cur.write_in_file(name, data)
-                        print(f"\nЗапись успешна ({cur.full_path})" if res else f"\nЗапись не удалась, похоже файла не существует ({cur.full_path})")
-                                
+                        print(
+                            f"\nЗапись успешна ({cur.full_path})" if res else f"\nЗапись не удалась, похоже файла не существует ({cur.full_path})")
 
                     if case == '3':
                         name = input("Введите имя файла: ")
                         lines = cur.print_file(name)
                         if lines is not None:
-                            print("\nСоздержимое файла: ", end='') 
+                            print("\nСоздержимое файла: ", end='')
                             print(*lines)
                         else:
-                            print(f"\nОшибка. Похоже файла не существует ({cur.full_path}).")
-
+                            print(
+                                f"\nОшибка. Похоже файла не существует ({cur.full_path}).")
 
                     if case == '4':
                         name = input("Введите имя файла: ")
                         res = cur.delete_file(name)
-                        print(f"\nФайл успешно удален ({cur.full_path})" if res else f"\nНе удалось удалить файл, похоже его не существует ({cur.full_path})")
-
+                        print(
+                            f"\nФайл успешно удален ({cur.full_path})" if res else f"\nНе удалось удалить файл, похоже его не существует ({cur.full_path})")
 
                 except AssertionError as e:
                     print('\n' + str(e))
 
                 if case == '5':
                     break
-                
-                input("\nНажмите любую клавишу, чтобы продолжить...")
 
+                input("\nНажмите любую клавишу, чтобы продолжить...")
 
         # ZIP
         if case == '5':
@@ -360,8 +394,8 @@ if __name__ == "__main__":
                     if case == '1':
                         name = input("Введите имя архива: ")
                         res = cur.create_file(name)
-                        print(f"\nСоздание успешно ({cur.full_path})" if res else f"\nСоздание не удалось, похоже архив уже существует ({cur.full_path})")
-
+                        print(
+                            f"\nСоздание успешно ({cur.full_path})" if res else f"\nСоздание не удалось, похоже архив уже существует ({cur.full_path})")
 
                     if case == '2':
                         name = input("Введите имя архива: ")
@@ -370,8 +404,8 @@ if __name__ == "__main__":
                         print("Cоздан тестовый файл test_for_zip.xml")
                         res = cur.write_in_file(name, test_file_name)
                         os.remove(test_file_name)
-                        print(f"\nЗапись успешна ({cur.full_path})" if res else f"\nЗапись не удалась, похоже архива не существует ({cur.full_path})")
-                                
+                        print(
+                            f"\nЗапись успешна ({cur.full_path})" if res else f"\nЗапись не удалась, похоже архива не существует ({cur.full_path})")
 
                     if case == '3':
                         name = input("Введите имя архива: ")
@@ -379,29 +413,29 @@ if __name__ == "__main__":
                         print("Данные о файле: ")
                         if print_file_zip_info(name):
                             path_to_file = extract_zip(name)
-                            print(f"\nФайл успешно разархивирован ({path_to_file}).")
+                            print(
+                                f"\nФайл успешно разархивирован ({path_to_file}).")
                         else:
                             print("\nОшибка. Похоже файла не существует.")
-
 
                     if case == '4':
                         name = input("Введите имя архива: ")
                         res = cur.delete_file(name)
-                        print(f"\nАрхив и файл успешно удалены ({cur.full_path})" if res else f"\nНе удалось удалить архив, похоже его не существует ({cur.full_path})")
-
+                        print(
+                            f"\nАрхив и файл успешно удалены ({cur.full_path})" if res else f"\nНе удалось удалить архив, похоже его не существует ({cur.full_path})")
 
                 except AssertionError as e:
                     print('\n' + str(e))
 
                 if case == '5':
                     break
-                
+
                 input("\nНажмите любую клавишу, чтобы продолжить...")
 
-        
         #  __________
         # |          |
         # |  EXIT -> |
         # |__________|
         if case == '6':
+            reset_terminal()
             break
