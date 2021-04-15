@@ -5,6 +5,8 @@ import enum
 import json
 
 from sys import platform
+import xml.etree.ElementTree as xml
+import xml.etree.cElementTree as ET
 
 
 # -- classes --
@@ -25,15 +27,16 @@ class ReadFile:
         self.tp = file_type
 
     def create_file(self, name: str) -> bool:
-        if self.tp is None:
-            assert '.' not in name, "Неверный тип файла!"
-        else:
+        if self.tp is not None:
             assert self.tp in name, "Неверный тип файла!"
 
         self.full_path = os.path.join(self.path, name)
         if name not in os.listdir('.'):
-            with open(self.full_path, 'w') as _:
-                pass
+            if self.tp == Types.XML.tp:
+                create_test_xml(self.full_path)
+            else:
+                with open(self.full_path, 'w') as _:
+                    pass
             return True
         else:
             return False
@@ -50,6 +53,8 @@ class ReadFile:
             elif self.tp == Types.JSON.tp:
                 with open(self.full_path, 'w') as fw:
                     json.dump(self.object_to_write, fw, indent=4)
+            elif self.tp == Types.XML.tp:
+                write_in_xml(self.full_path, self.object_to_write)
             return True
         except OSError:
             return False
@@ -84,6 +89,47 @@ def reset_terminal():
         os.system('reset')
     elif platform == "win32":
         os.system('cls')
+
+
+def create_test_xml(file_name):
+    root = xml.Element("zAppointments")
+    appt = xml.Element("appointment")
+    root.append(appt)
+    
+    t_o = xml.SubElement(appt, "Tested_Object")
+    t_o.text = "There is some text to Tested_Object..."
+    
+    l_o_0 = xml.SubElement(appt, "Little_Object_0")
+    l_o_0.text = "There is some text to Little_Object_0..."
+    
+    l_o_1 = xml.SubElement(appt, "Little_Object_1")
+    l_o_1.text = "There is some text to Little_Object_1..."
+    
+    y_t = xml.SubElement(appt, "YORE_TEXT_IS_HERE")
+    y_t.text = ""
+    
+    l_o_2 = xml.SubElement(appt, "Little_Object_2")
+    
+    l_o_3 = xml.SubElement(appt, "Little_Object_3")
+    l_o_3.text = "There is some text to Little_Object_3..."
+    
+    l_o_4 = xml.SubElement(appt, "Little_Object_4")
+        
+    tree = xml.ElementTree(root)
+    with open(file_name, "wb") as fwd:
+        tree.write(fwd)
+
+
+def write_in_xml(file_name, text):
+    tree = ET.ElementTree(file=file_name)
+    root = tree.getroot()
+    
+    for y_t in root.iter("YORE_TEXT_IS_HERE"):
+        y_t.text = text
+    
+    tree = ET.ElementTree(root)
+    with open(file_name, "wb") as fwd:
+        tree.write(fwd)
 
 
 # -- launch --
@@ -217,13 +263,61 @@ if __name__ == "__main__":
 
         # XML
         if case == '4':
-            ...
+            while True:
+                reset_terminal()
+                print("> РАБОТА С XML")
+                print("Выберите, что делать дальше:")
+                print("1. Создать файл в формате XML.\n2. Записать в файл новые данные из консоли.\n3. Прочитать файл в консоль.\n4. Удалить файл.\n5. Выйти")
+                case = input("\nВведите номер пункта: ")
+
+                cur = ReadFile(file_type=Types.XML.tp)
+
+                try:
+                    if case == '1':
+                        name = input("Введите имя файла: ")
+                        res = cur.create_file(name)
+                        print(f"\nСоздание успешно ({cur.full_path})" if res else f"\nСоздание не удалось, похоже файл уже существует ({cur.full_path})")
+
+
+                    if case == '2':
+                        name = input("Введите имя файла: ")
+                        data = input("Введите данные для записи: ")
+                        res = cur.write_in_file(name, data)
+                        print(f"\nЗапись успешна ({cur.full_path})" if res else f"\nЗапись не удалось, похоже файла не существует ({cur.full_path})")
+                                
+
+                    if case == '3':
+                        name = input("Введите имя файла: ")
+                        lines = cur.print_file(name)
+                        if lines is not None:
+                            print("\nСоздержимое файла: ", end='') 
+                            print(*lines)
+                        else:
+                            print(f"\nОшибка. Похоже файла не существует ({cur.full_path}).")
+
+
+                    if case == '4':
+                        name = input("Введите имя файла: ")
+                        res = cur.delete_file(name)
+                        print(f"\nФайл успешно удален ({cur.full_path})" if res else f"\nНеудалось удалить файл, похоже его не существует ({cur.full_path})")
+
+
+                except AssertionError as e:
+                    print('\n' + str(e))
+
+                if case == '5':
+                    break
+                
+                input("\nНажмите любую клавишу, чтобы продолжить...")
 
 
         # ZIP
         if case == '5':
             ...
         
-        # EXIT ->
+        #  __________
+        # |          |
+        # |  EXIT -> |
+        # |__________|
         if case == '6':
             break
