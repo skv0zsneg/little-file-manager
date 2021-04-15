@@ -1,4 +1,6 @@
 # home-work-1
+<img width="654" alt="raycast-untitled" src="https://user-images.githubusercontent.com/45899305/114853819-db2e0100-9dec-11eb-94bb-2d91710fc39e.png">
+
 ___
 *Python 3.x*
 
