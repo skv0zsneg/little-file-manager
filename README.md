@@ -4,7 +4,7 @@ ___
 
 #### Запуск одной строкой.
 ```shell
-    python main.py
+    python home_work_1.py
 ```
 *Доплнительно устанавливается модуль из requirements.txt (pypiwin32==223)*
 ___
